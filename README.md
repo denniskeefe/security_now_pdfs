@@ -23,7 +23,7 @@ A Python script to download "Security Now" podcast PDFs (Show Notes, Transcripts
 2. Install the required Python dependency:
 
    ```bash
-   pip install requests
+   pip3 install requests
    ```
 
 ## Usage
