@@ -1,6 +1,6 @@
 # Security Now PDF Downloader
 
-This script was Vibe Coded with Gemini Pro
+This script was Vibe Coded with Claude
 
 A Python script to download "Security Now" podcast PDFs (Show Notes, Transcripts, etc.) from GRC.com, organized by year.
 
