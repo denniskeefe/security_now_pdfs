@@ -31,7 +31,7 @@ A Python script to download "Security Now" podcast PDFs (Show Notes, Transcripts
 Run the script from your terminal:
 
 ```bash
-python3 download_security_now.py
+python3 pdf_grabber.py
 ```
 
 When prompted, enter the year you wish to download (between 2005 and 2026).

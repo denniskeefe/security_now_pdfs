@@ -1,19 +1,21 @@
 import os
-import requests
 import time
+from pathlib import Path
+from urllib.parse import unquote
+import requests
 
 BASE_URL = "https://www.grc.com/sn/"
 OUTPUT_DIR = "securitynow_pdfs"
 USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
 
 def download_file(url, folder):
-    local_filename = os.path.join(folder, url.split('/')[-1])
+    local_filename = os.path.join(folder, unquote(Path(url).name))
     if os.path.exists(local_filename):
         print(f"Skipping {local_filename} (already exists)")
         return True
 
     try:
-        with requests.get(url, stream=True, headers={'User-Agent': USER_AGENT}) as r:
+        with requests.get(url, stream=True, timeout=30, headers={'User-Agent': USER_AGENT}) as r:
             if r.status_code == 200:
                 print(f"Downloading {url}...")
                 with open(local_filename, 'wb') as f:
@@ -30,10 +32,10 @@ def download_file(url, folder):
         return False
 
 def main():
-    if not os.path.exists(OUTPUT_DIR):
-        os.makedirs(OUTPUT_DIR)
+    os.makedirs(OUTPUT_DIR, exist_ok=True)
 
-    # Episode ranges by year
+    # Episode ranges by year. 2026 uses 9999 as a sentinel — the consecutive-failure
+    # guard (max_consecutive_failures) terminates the loop once episodes run out.
     year_map = {
         2005: (1, 19), 2006: (20, 71), 2007: (72, 123), 2008: (124, 175),
         2009: (176, 227), 2010: (228, 279), 2011: (280, 331), 2012: (332, 383),
@@ -61,7 +63,7 @@ def main():
     print(f"Starting download for year {year} (Episodes {start_ep} to {end_ep if end_ep < 9999 else '...'}) to '{OUTPUT_DIR}'...")
 
     while episode <= end_ep and consecutive_failures < max_consecutive_failures:
-        # Padded episode number for filenames
+        # zfill(3) pads single/double-digit episodes; numbers >= 1000 are unaffected
         ep_str = str(episode).zfill(3)
 
         urls_to_try = [
@@ -70,17 +72,18 @@ def main():
             f"{BASE_URL}sn-{ep_str}-transcript.pdf"
         ]
 
+        # found_any stays True if any variant (main pdf, notes, or transcript) downloaded
         found_any = False
         for url in urls_to_try:
             if download_file(url, OUTPUT_DIR):
                 found_any = True
-        
+
         if found_any:
             consecutive_failures = 0
         else:
             consecutive_failures += 1
-            if consecutive_failures > 1: # Don't spam print on every missing variant
-                 print(f"Episode {episode} not found (Consecutive misses: {consecutive_failures})")
+            if consecutive_failures > 1:
+                print(f"Episode {episode} not found (Consecutive misses: {consecutive_failures})")
 
         episode += 1
         time.sleep(0.1) # Be nice to the server
